@@ -44,7 +44,8 @@ def health_check():
     """
     Health probe
     ---
-    tags: [Utility]
+    tags:
+      - Utility
     responses:
       200:
         description: Service is running
@@ -58,12 +59,14 @@ def health_check():
     """
     return jsonify(status="healthy", service="parking-analytics")
 
+
 @app.route('/api/track-parking', methods=['POST'])
 def track_parking_event():
     """
     Track a parking-spot event
     ---
-    tags: [Events]
+    tags:
+      - Events
     parameters:
       - in: body
         name: payload
@@ -98,12 +101,14 @@ def track_parking_event():
     db.session.commit()
     return jsonify(message="Event tracked successfully"), 201
 
+
 @app.route('/api/analytics/popular-spots', methods=['GET'])
 def get_popular_spots():
     """
     Top 10 most frequently occupied spots
     ---
-    tags: [Analytics]
+    tags:
+      - Analytics
     responses:
       200:
         description: List ordered by usage
@@ -132,12 +137,14 @@ def get_popular_spots():
         {"spot_id": sid, "usage_count": cnt} for sid, cnt in events
     ])
 
+
 @app.route('/api/analytics/frequent-users', methods=['GET'])
 def get_frequent_users():
     """
     Top 10 users by parking sessions
     ---
-    tags: [Analytics]
+    tags:
+      - Analytics
     responses:
       200:
         description: List ordered by number of sessions
@@ -163,12 +170,14 @@ def get_frequent_users():
         {"user_id": uid, "parking_sessions": cnt} for uid, cnt in events
     ])
 
+
 @app.route('/api/analytics/usage-stats', methods=['GET'])
 def get_usage_stats():
     """
     Overall usage statistics
     ---
-    tags: [Analytics]
+    tags:
+      - Analytics
     responses:
       200:
         description: Aggregated numbers
@@ -192,12 +201,14 @@ def get_usage_stats():
         unique_spots_used=spots
     )
 
+
 @app.route('/api/analytics/dashboard', methods=['GET'])
 def get_dashboard_data():
     """
     Convenience endpoint that bundles all analytics
     ---
-    tags: [Analytics]
+    tags:
+      - Analytics
     responses:
       200:
         description: Combined payload for dashboards
