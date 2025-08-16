@@ -1,8 +1,12 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from flasgger import Swagger               # ← NEW
+from flasgger import Swagger
 import os
+#za graphql
+import strawberry
+from strawberry.flask.views import GraphQLView
+from typing import Optional, List
 
 app = Flask(__name__)
 
@@ -174,6 +178,93 @@ def get_dashboard_data():
         **get_usage_stats().get_json(),
         "last_updated": datetime.utcnow().isoformat()
     })
+# GRAPH QL ___________________________________________
+@strawberry.type
+class ParkingEventType:
+    id: int
+    user_id: str
+    spot_id: int
+    action: str
+    timestamp: datetime
+    duration_hours: Optional[float]
+
+@strawberry.type
+class UserType:
+    user_id: str
+
+    @strawberry.field
+    def events(self) -> List[ParkingEventType]:
+        db_events = ParkingEvent.query.filter_by(user_id=self.user_id).all()
+        return [
+            ParkingEventType(
+                id=e.id,
+                user_id=e.user_id,
+                spot_id=e.spot_id,
+                action=e.action,
+                timestamp=e.timestamp,
+                duration_hours=e.duration_hours
+            ) for e in db_events
+        ]
+
+@strawberry.type
+class SpotType:
+    spot_id: int
+
+    @strawberry.field
+    def events(self) -> List[ParkingEventType]:
+        db_events = ParkingEvent.query.filter_by(spot_id=self.spot_id).all()
+        return [
+            ParkingEventType(
+                id=e.id,
+                user_id=e.user_id,
+                spot_id=e.spot_id,
+                action=e.action,
+                timestamp=e.timestamp,
+                duration_hours=e.duration_hours
+            ) for e in db_events
+        ]
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def all_events(self) -> List[ParkingEventType]:
+        events = ParkingEvent.query.all()
+        return [
+            ParkingEventType(
+                id=e.id,
+                user_id=e.user_id,
+                spot_id=e.spot_id,
+                action=e.action,
+                timestamp=e.timestamp,
+                duration_hours=e.duration_hours
+            )
+            for e in events
+        ]
+
+    @strawberry.field
+    def user(self, user_id: str) -> Optional[UserType]:
+        user_exists = ParkingEvent.query.filter_by(user_id=user_id).first()
+        if user_exists:
+            return UserType(user_id=user_id)
+        return None
+
+    @strawberry.field
+    def spot(self, spot_id: int) -> Optional[SpotType]:
+        spot_exists = ParkingEvent.query.filter_by(spot_id=spot_id).first()
+        if spot_exists:
+            return SpotType(spot_id=spot_id)
+        return None
+
+schema = strawberry.Schema(Query)
+
+app.add_url_rule(
+    '/graphql',
+    view_func=GraphQLView.as_view(
+        'graphql_view',
+        schema=schema,
+        graphiql=True  # Enable GraphiQL IDE
+    )
+)
 
 
 if __name__ == '__main__':
