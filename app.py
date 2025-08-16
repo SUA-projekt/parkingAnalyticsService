@@ -59,7 +59,6 @@ def health_check():
     """
     return jsonify(status="healthy", service="parking-analytics")
 
-
 @app.route('/api/track-parking', methods=['POST'])
 def track_parking_event():
     """
@@ -73,17 +72,22 @@ def track_parking_event():
         required: true
         schema:
           type: object
-          required: [user_id, spot_id, action]
+          required:
+            - user_id
+            - spot_id
+            - action
           properties:
             user_id:
               type: string
-              example: "6fe860b7-…"
+              example: "6fe860b7-..."
             spot_id:
               type: integer
               example: 9
             action:
               type: string
-              enum: [occupied, freed]
+              enum:
+                - occupied
+                - freed
             duration_hours:
               type: number
               example: 1.5
@@ -96,11 +100,9 @@ def track_parking_event():
     data = request.get_json(force=True)
     if not all(k in data for k in ("user_id", "spot_id", "action")):
         return jsonify(error="user_id, spot_id, action required"), 400
-
     db.session.add(ParkingEvent(**data))
     db.session.commit()
     return jsonify(message="Event tracked successfully"), 201
-
 
 @app.route('/api/analytics/popular-spots', methods=['GET'])
 def get_popular_spots():
@@ -128,15 +130,14 @@ def get_popular_spots():
     events = db.session.query(
         ParkingEvent.spot_id,
         db.func.count(ParkingEvent.id).label('usage_count')
-    ).filter(ParkingEvent.action == 'occupied')\
-     .group_by(ParkingEvent.spot_id)\
-     .order_by(db.func.count(ParkingEvent.id).desc())\
+    ).filter(ParkingEvent.action == 'occupied') \
+     .group_by(ParkingEvent.spot_id) \
+     .order_by(db.func.count(ParkingEvent.id).desc()) \
      .limit(10).all()
 
     return jsonify(popular_spots=[
         {"spot_id": sid, "usage_count": cnt} for sid, cnt in events
     ])
-
 
 @app.route('/api/analytics/frequent-users', methods=['GET'])
 def get_frequent_users():
@@ -161,15 +162,14 @@ def get_frequent_users():
     events = db.session.query(
         ParkingEvent.user_id,
         db.func.count(ParkingEvent.id).label('parking_sessions')
-    ).filter(ParkingEvent.action == 'occupied')\
-     .group_by(ParkingEvent.user_id)\
-     .order_by(db.func.count(ParkingEvent.id).desc())\
+    ).filter(ParkingEvent.action == 'occupied') \
+     .group_by(ParkingEvent.user_id) \
+     .order_by(db.func.count(ParkingEvent.id).desc()) \
      .limit(10).all()
 
     return jsonify(frequent_users=[
         {"user_id": uid, "parking_sessions": cnt} for uid, cnt in events
     ])
-
 
 @app.route('/api/analytics/usage-stats', methods=['GET'])
 def get_usage_stats():
@@ -201,7 +201,6 @@ def get_usage_stats():
         unique_spots_used=spots
     )
 
-
 @app.route('/api/analytics/dashboard', methods=['GET'])
 def get_dashboard_data():
     """
@@ -220,7 +219,7 @@ def get_dashboard_data():
         "last_updated": datetime.utcnow().isoformat()
     })
 
-# ───────────── GraphQL Types ────────────────
+# ───────── GraphQL Types ──────────
 @strawberry.type
 class ParkingEventType:
     id: int
@@ -266,7 +265,7 @@ class SpotType:
             ) for e in events
         ]
 
-# ───────────── GraphQL Query ────────────────
+# ───────── GraphQL Query ──────────
 @strawberry.type
 class Query:
     @strawberry.field
@@ -307,7 +306,6 @@ class Query:
 
 schema = strawberry.Schema(Query)
 
-# ───────────── GraphQL Route ────────────────
 app.add_url_rule(
     '/graphql',
     view_func=GraphQLView.as_view('graphql_view', schema=schema, graphiql=True)
