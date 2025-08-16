@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from flasgger import Swagger               # ← NEW
+from flasgger import Swagger
+import graphene
+from flask_graphql import GraphQLView
 import os
 
 app = Flask(__name__)
@@ -174,6 +176,54 @@ def get_dashboard_data():
         **get_usage_stats().get_json(),
         "last_updated": datetime.utcnow().isoformat()
     })
+
+#dodajanje GRAPHQL
+# 3 tipi
+class ParkingEventType(graphene.ObjectType):
+    id = graphene.Int()
+    user_id = graphene.String()
+    spot_id = graphene.Int()
+    action = graphene.String()
+    timestamp = graphene.DateTime()
+    duration_hours = graphene.Float()
+
+class UserType(graphene.ObjectType):
+    id = graphene.String()
+    events = graphene.List(lambda: ParkingEventType)
+
+    def resolve_events(parent, info):
+        return ParkingEvent.query.filter_by(user_id=parent.id).all()
+
+class SpotType(graphene.ObjectType):
+    id = graphene.Int()
+    events = graphene.List(lambda: ParkingEventType)
+
+    def resolve_events(parent, info):
+        return ParkingEvent.query.filter_by(spot_id=parent.id).all()
+
+# vsaj 2 querya
+class Query(graphene.ObjectType):
+    all_events = graphene.List(ParkingEventType)
+    event = graphene.Field(ParkingEventType, id=graphene.Int(required=True))
+    user = graphene.Field(UserType, id=graphene.String(required=True))
+    spot = graphene.Field(SpotType, id=graphene.Int(required=True))
+
+    def resolve_all_events(root, info):
+        return ParkingEvent.query.all()
+    def resolve_event(root, info, id):
+        return ParkingEvent.query.filter_by(id=id).first()
+    def resolve_user(root, info, id):
+        return UserType(id=id)
+    def resolve_spot(root, info, id):
+        return SpotType(id=id)
+
+schema = graphene.Schema(query=Query)
+
+# GraphQL endpoint
+app.add_url_rule(
+    '/graphql',
+    view_func=GraphQLView.as_view('graphql', schema=schema, graphiql=True)
+)
 
 
 if __name__ == '__main__':
