@@ -9,14 +9,14 @@ import os
 
 app = Flask(__name__)
 
-# ───────────── Database ─────────────
+# Database config
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
     "DATABASE_URL", "sqlite:///analytics.db"
 ).replace("postgres://", "postgresql://")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
-# ─────────── Swagger config ──────────
+# Swagger config
 swagger = Swagger(app, template={
     "swagger": "2.0",
     "info": {
@@ -26,7 +26,7 @@ swagger = Swagger(app, template={
     }
 })
 
-# ───────────── Models ────────────────
+# Model definition
 class ParkingEvent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.String(100), nullable=False)
@@ -38,7 +38,8 @@ class ParkingEvent(db.Model):
 with app.app_context():
     db.create_all()
 
-# ───────────── REST Routes ────────────────
+# REST Endpoints with proper docstrings
+
 @app.route('/health', methods=['GET'])
 def health_check():
     """
@@ -135,9 +136,7 @@ def get_popular_spots():
      .order_by(db.func.count(ParkingEvent.id).desc()) \
      .limit(10).all()
 
-    return jsonify(popular_spots=[
-        {"spot_id": sid, "usage_count": cnt} for sid, cnt in events
-    ])
+    return jsonify(popular_spots=[{"spot_id": sid, "usage_count": cnt} for sid, cnt in events])
 
 @app.route('/api/analytics/frequent-users', methods=['GET'])
 def get_frequent_users():
@@ -167,9 +166,7 @@ def get_frequent_users():
      .order_by(db.func.count(ParkingEvent.id).desc()) \
      .limit(10).all()
 
-    return jsonify(frequent_users=[
-        {"user_id": uid, "parking_sessions": cnt} for uid, cnt in events
-    ])
+    return jsonify(frequent_users=[{"user_id": uid, "parking_sessions": cnt} for uid, cnt in events])
 
 @app.route('/api/analytics/usage-stats', methods=['GET'])
 def get_usage_stats():
@@ -195,11 +192,7 @@ def get_usage_stats():
     users = db.session.query(ParkingEvent.user_id).distinct().count()
     spots = db.session.query(ParkingEvent.spot_id).distinct().count()
 
-    return jsonify(
-        total_parking_sessions=total,
-        unique_users=users,
-        unique_spots_used=spots
-    )
+    return jsonify(total_parking_sessions=total, unique_users=users, unique_spots_used=spots)
 
 @app.route('/api/analytics/dashboard', methods=['GET'])
 def get_dashboard_data():
@@ -219,7 +212,8 @@ def get_dashboard_data():
         "last_updated": datetime.utcnow().isoformat()
     })
 
-# ───────── GraphQL Types ──────────
+# GraphQL Types and Query with Strawberry
+
 @strawberry.type
 class ParkingEventType:
     id: int
@@ -236,16 +230,14 @@ class UserType:
     @strawberry.field
     def events(self) -> list[ParkingEventType]:
         events = ParkingEvent.query.filter_by(user_id=self.id).all()
-        return [
-            ParkingEventType(
-                id=e.id,
-                user_id=e.user_id,
-                spot_id=e.spot_id,
-                action=e.action,
-                timestamp=e.timestamp,
-                duration_hours=e.duration_hours
-            ) for e in events
-        ]
+        return [ParkingEventType(
+            id=e.id,
+            user_id=e.user_id,
+            spot_id=e.spot_id,
+            action=e.action,
+            timestamp=e.timestamp,
+            duration_hours=e.duration_hours
+        ) for e in events]
 
 @strawberry.type
 class SpotType:
@@ -254,33 +246,28 @@ class SpotType:
     @strawberry.field
     def events(self) -> list[ParkingEventType]:
         events = ParkingEvent.query.filter_by(spot_id=self.id).all()
-        return [
-            ParkingEventType(
-                id=e.id,
-                user_id=e.user_id,
-                spot_id=e.spot_id,
-                action=e.action,
-                timestamp=e.timestamp,
-                duration_hours=e.duration_hours
-            ) for e in events
-        ]
+        return [ParkingEventType(
+            id=e.id,
+            user_id=e.user_id,
+            spot_id=e.spot_id,
+            action=e.action,
+            timestamp=e.timestamp,
+            duration_hours=e.duration_hours
+        ) for e in events]
 
-# ───────── GraphQL Query ──────────
 @strawberry.type
 class Query:
     @strawberry.field
     def all_events(self) -> list[ParkingEventType]:
         events = ParkingEvent.query.all()
-        return [
-            ParkingEventType(
-                id=e.id,
-                user_id=e.user_id,
-                spot_id=e.spot_id,
-                action=e.action,
-                timestamp=e.timestamp,
-                duration_hours=e.duration_hours
-            ) for e in events
-        ]
+        return [ParkingEventType(
+            id=e.id,
+            user_id=e.user_id,
+            spot_id=e.spot_id,
+            action=e.action,
+            timestamp=e.timestamp,
+            duration_hours=e.duration_hours
+        ) for e in events]
 
     @strawberry.field
     def event(self, id: int) -> Optional[ParkingEventType]:
@@ -306,8 +293,7 @@ class Query:
 
 schema = strawberry.Schema(Query)
 
-app.add_url_rule(
-    '/graphql',
+app.add_url_rule('/graphql',
     view_func=GraphQLView.as_view('graphql_view', schema=schema, graphiql=True)
 )
 
