@@ -4,6 +4,7 @@ from datetime import datetime
 from flasgger import Swagger
 import strawberry
 from strawberry.flask.views import GraphQLView
+from typing import Optional
 import os
 
 app = Flask(__name__)
@@ -216,7 +217,7 @@ class ParkingEventType:
     spot_id: int
     action: str
     timestamp: datetime
-    duration_hours: float | None
+    duration_hours: Optional[float] = None
 
 @strawberry.type
 class UserType:
@@ -272,7 +273,7 @@ class Query:
         ]
 
     @strawberry.field
-    def event(self, id: int) -> ParkingEventType | None:
+    def event(self, id: int) -> Optional[ParkingEventType]:
         e = ParkingEvent.query.filter_by(id=id).first()
         if e is None:
             return None
