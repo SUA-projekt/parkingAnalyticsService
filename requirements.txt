@@ -4,5 +4,4 @@ psycopg2-binary==2.9.9
 flasgger==0.9.7.1
 gunicorn==21.2.0
 graphene==3.3
-graphene-sqlalchemy==3.0.0b1
-flask-graphene==0.2.0
+straberry-graphql[flask]
