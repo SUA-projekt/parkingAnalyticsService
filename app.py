@@ -35,8 +35,10 @@ class ParkingEvent(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     duration_hours = db.Column(db.Float)  # for 'freed'
 
+
 with app.app_context():
     db.create_all()
+
 
 # REST Endpoints with proper docstrings
 
@@ -59,6 +61,7 @@ def health_check():
               type: string
     """
     return jsonify(status="healthy", service="parking-analytics")
+
 
 @app.route('/api/track-parking', methods=['POST'])
 def track_parking_event():
@@ -105,6 +108,7 @@ def track_parking_event():
     db.session.commit()
     return jsonify(message="Event tracked successfully"), 201
 
+
 @app.route('/api/analytics/popular-spots', methods=['GET'])
 def get_popular_spots():
     """
@@ -138,6 +142,7 @@ def get_popular_spots():
 
     return jsonify(popular_spots=[{"spot_id": sid, "usage_count": cnt} for sid, cnt in events])
 
+
 @app.route('/api/analytics/frequent-users', methods=['GET'])
 def get_frequent_users():
     """
@@ -149,14 +154,17 @@ def get_frequent_users():
       200:
         description: List ordered by number of sessions
         schema:
-          type: array
-          items:
-            type: object
-            properties:
-              user_id:
-                type: string
-              parking_sessions:
-                type: integer
+          type: object
+          properties:
+            frequent_users:
+              type: array
+              items:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  parking_sessions:
+                    type: integer
     """
     events = db.session.query(
         ParkingEvent.user_id,
@@ -167,6 +175,7 @@ def get_frequent_users():
      .limit(10).all()
 
     return jsonify(frequent_users=[{"user_id": uid, "parking_sessions": cnt} for uid, cnt in events])
+
 
 @app.route('/api/analytics/usage-stats', methods=['GET'])
 def get_usage_stats():
@@ -194,6 +203,7 @@ def get_usage_stats():
 
     return jsonify(total_parking_sessions=total, unique_users=users, unique_spots_used=spots)
 
+
 @app.route('/api/analytics/dashboard', methods=['GET'])
 def get_dashboard_data():
     """
@@ -212,8 +222,8 @@ def get_dashboard_data():
         "last_updated": datetime.utcnow().isoformat()
     })
 
-# GraphQL Types and Query with Strawberry
 
+# GraphQL Types and Query with Strawberry
 @strawberry.type
 class ParkingEventType:
     id: int
@@ -222,6 +232,7 @@ class ParkingEventType:
     action: str
     timestamp: datetime
     duration_hours: Optional[float] = None
+
 
 @strawberry.type
 class UserType:
@@ -239,6 +250,7 @@ class UserType:
             duration_hours=e.duration_hours
         ) for e in events]
 
+
 @strawberry.type
 class SpotType:
     id: int
@@ -254,6 +266,7 @@ class SpotType:
             timestamp=e.timestamp,
             duration_hours=e.duration_hours
         ) for e in events]
+
 
 @strawberry.type
 class Query:
@@ -291,11 +304,13 @@ class Query:
     def spot(self, id: int) -> SpotType:
         return SpotType(id=id)
 
+
 schema = strawberry.Schema(Query)
 
 app.add_url_rule('/graphql',
     view_func=GraphQLView.as_view('graphql_view', schema=schema, graphiql=True)
 )
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
