@@ -5,4 +5,4 @@ flasgger==0.9.7.1
 gunicorn==21.2.0
 graphene
 graphene-sqlalchemy
-flask-graphql
+flask-graphene

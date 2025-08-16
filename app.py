@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from flasgger import Swagger
 import graphene
-from flask_graphql import GraphQLView
+from flask_graphene import GraphQLView
 import os
 
 app = Flask(__name__)
