@@ -262,7 +262,7 @@ app.add_url_rule(
     view_func=GraphQLView.as_view(
         'graphql_view',
         schema=schema,
-        graphiql=True  # Enable GraphiQL IDE
+        graphiql=True
     )
 )
 
