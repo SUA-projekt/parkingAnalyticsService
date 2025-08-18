@@ -16,8 +16,7 @@ CORS(
     app,
     resources={r"/*": {"origins": [
         "http://localhost:8080",         # dev frontend
-        "http://localhost:3000",         # če kdaj uporabljaš 3000
-        "https://tvoja-prod-domena.si",  # <--- tukaj dodaj svoj prod origin
+        "https://parkinganalyticsservice.onrender.com/api/analytics/dashboard",  
     ]}},
     supports_credentials=False,
     allow_headers=["Content-Type", "Authorization"],
