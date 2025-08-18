@@ -7,9 +7,22 @@ import os
 import strawberry
 from strawberry.flask.views import GraphQLView
 from typing import Optional, List
+from flask_cors import CORS
 
 app = Flask(__name__)
 
+# --- CORS ---
+CORS(
+    app,
+    resources={r"/*": {"origins": [
+        "http://localhost:8080",         # dev frontend
+        "https://parkinganalyticsservice.onrender.com/api/analytics/dashboard",  
+    ]}},
+    supports_credentials=False,
+    allow_headers=["Content-Type", "Authorization"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    max_age=86400,
+)
 # ───────────── Database ─────────────
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
     "DATABASE_URL", "sqlite:///analytics.db"
