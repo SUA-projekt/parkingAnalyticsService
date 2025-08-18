@@ -24,11 +24,11 @@ CORS(
     max_age=86400,
 )
 # ───────────── Database ─────────────
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
-    "DATABASE_URL", "sqlite:///analytics.db"
-).replace("postgres://", "postgresql://")
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = SQLAlchemy(app)
+#app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+#    "DATABASE_URL", "sqlite:///analytics.db"
+#).replace("postgres://", "postgresql://")
+#app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+#db = SQLAlchemy(app)
 
 # ─────────── Swagger config ──────────
 swagger = Swagger(app, template={
@@ -39,6 +39,16 @@ swagger = Swagger(app, template={
         "description": "Tracks parking-spot usage and exposes analytics"
     }
 })
+
+# ───────────── Database ─────────────
+raw_db_url = os.getenv("DATABASE_URL", "sqlite:///analytics.db")
+sqlalchemy_db_uri = raw_db_url.replace("postgres://", "postgresql://")
+
+app.config["SQLALCHEMY_DATABASE_URI"] = sqlalchemy_db_uri
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
+
+
 
 # ───────────── Models ────────────────
 class ParkingEvent(db.Model):
